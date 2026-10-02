@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelly's Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #6b3fa0;
+    --purple-deep: #3d1f66;
+    --purple-light: #c9a8f0;
+    --lavender: #efe7fa;
+    --white: #ffffff;
+    --bg: #f7f4fb;
+    --surface: #ffffff;
+    --text: #231a33;
+    --muted: #65597a;
+    --border: #e6def0;
+    --shadow: 0 1px 2px rgba(61, 31, 102, .06), 0 4px 16px rgba(61, 31, 102, .07);
+
+    --live: #1a7f4b;      --live-bg: #e3f5ea;
+    --draft: #5f5873;     --draft-bg: #eceaf1;
+    --review: #9a6200;    --review-bg: #fdf1d8;
+    --blocked: #c01f31;   --blocked-bg: #fde6e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #150f20; --surface: #211833; --text: #f2edf8; --muted: #b3a6c8; --border: #362a4d;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+      --live: #5fd296;    --live-bg: rgba(95,210,150,.14);
+      --draft: #b9b3c9;   --draft-bg: rgba(185,179,201,.14);
+      --review: #f2c14e;  --review-bg: rgba(242,193,78,.14);
+      --blocked: #ff7b89; --blocked-bg: rgba(255,123,137,.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #150f20; --surface: #211833; --text: #f2edf8; --muted: #b3a6c8; --border: #362a4d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    --live: #5fd296;    --live-bg: rgba(95,210,150,.14);
+    --draft: #b9b3c9;   --draft-bg: rgba(185,179,201,.14);
+    --review: #f2c14e;  --review-bg: rgba(242,193,78,.14);
+    --blocked: #ff7b89; --blocked-bg: rgba(255,123,137,.14);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Header with a tricolore stripe */
+  header {
+    background: var(--purple-deep);
+    color: var(--white);
+    position: relative;
+  }
+  header::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
+    background: linear-gradient(90deg, var(--purple-light), var(--purple), var(--purple-light));
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .header-inner { padding: 32px 24px 36px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    opacity: .75; margin: 0 0 6px;
+  }
+  h1 {
+    font-family: UnifrakturMaguntia, "Old English Text MT", serif;
+    font-weight: 400;
+    font-size: clamp(40px, 8vw, 64px);
+    line-height: 1.1;
+    margin: 0;
+  }
+  .subtitle { margin: 6px 0 0; opacity: .8; }
+
+  /* Progress indicator: share of pages live, segmented by status */
+  .progress { margin-top: 22px; max-width: 640px; }
+  .progress-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    font-size: 14px; margin-bottom: 8px;
+  }
+  .progress-head strong { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .progress-bar {
+    display: flex; gap: 2px;
+    height: 12px; border-radius: 999px; overflow: hidden;
+    background: rgba(255, 255, 255, .15);
+  }
+  .progress-bar span { background: var(--seg); transition: flex-grow .4s; }
+  .progress-legend {
+    display: flex; flex-wrap: wrap; gap: 6px 16px;
+    margin-top: 8px; font-size: 12px; opacity: .85;
+  }
+  .progress-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  main { padding: 28px 0 56px; }
+
+  /* Summary tiles */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .tile .label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .tile .value { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+  /* Filters */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: 13px; font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .chip:hover { border-color: var(--purple); }
+  .chip[aria-pressed="true"] { background: var(--purple); border-color: var(--purple); color: var(--white); }
+  .chip:focus-visible, select:focus-visible { outline: 2px solid var(--purple-light); outline-offset: 2px; }
+  select {
+    font: inherit; font-size: 14px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* Card grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 12px;
+    border-top: 4px solid var(--accent);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .section {
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .card h2 {
+    font-family: UnifrakturMaguntia, "Old English Text MT", serif;
+    font-size: 30px; font-weight: 400; margin: 4px 0 0; line-height: 1.15;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+    white-space: nowrap;
+    color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .badge .dot { background: var(--accent); }
+  .meta {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 13px; color: var(--muted);
+  }
+  .owner { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 500; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--purple); color: var(--white);
+    font-size: 11px; font-weight: 600;
+    display: grid; place-items: center; flex: none;
+  }
+  .date { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .s-live    { --accent: var(--live);    --accent-bg: var(--live-bg); }
+  .s-draft   { --accent: var(--draft);   --accent-bg: var(--draft-bg); }
+  .s-review  { --accent: var(--review);  --accent-bg: var(--review-bg); }
+  .s-blocked { --accent: var(--blocked); --accent-bg: var(--blocked-bg); }
+
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; grid-column: 1 / -1; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 0 16px; }
+    .header-inner { padding: 24px 16px 28px; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    select { width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap header-inner">
+      <p class="eyebrow">Parc Claude &middot; Website Content</p>
+      <h1>Kelly's Dashboard</h1>
+      <p class="subtitle">Status of every page on the Parc Claude website, at a glance.</p>
+      <div class="progress" id="progress"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="summary" id="summary" aria-label="Status summary"></section>
+
+    <div class="toolbar">
+      <div class="chips" id="chips" role="group" aria-label="Filter by status"></div>
+      <select id="section-filter" aria-label="Filter by section">
+        <option value="all">All sections</option>
+      </select>
+    </div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+  </main>
+
+<script>
+  const STATUSES = {
+    live:    { label: "Live",         cls: "s-live" },
+    draft:   { label: "Draft",        cls: "s-draft" },
+    review:  { label: "Needs review", cls: "s-review" },
+    blocked: { label: "Blocked",      cls: "s-blocked" },
+  };
+
+  const pages = [
+    { name: "Le Grand Carrousel",        section: "Attractions",  status: "live",    owner: "Madeleine Croissant", updated: "2026-09-26" },
+    { name: "Tour Eiffel Drop Tower",    section: "Attractions",  status: "review",  owner: "Pierre Algorithme",   updated: "2026-09-24" },
+    { name: "Seine River Rapids",        section: "Attractions",  status: "draft",   owner: "Madeleine Croissant", updated: "2026-09-18" },
+    { name: "Day Passes",                section: "Tickets",      status: "live",    owner: "Claudette Dubois",    updated: "2026-09-29" },
+    { name: "Season Passes",             section: "Tickets",      status: "blocked", owner: "Jean-Luc Backlog",    updated: "2026-09-12" },
+    { name: "Group & School Bookings",   section: "Tickets",      status: "review",  owner: "Claudette Dubois",    updated: "2026-09-22" },
+    { name: "Park Map",                  section: "Visit Us",     status: "live",    owner: "Pierre Algorithme",   updated: "2026-09-15" },
+    { name: "Opening Hours & Calendar",  section: "Visit Us",     status: "live",    owner: "Jean-Luc Backlog",    updated: "2026-09-28" },
+    { name: "Accessibility Guide",       section: "Visit Us",     status: "draft",   owner: "Claudette Dubois",    updated: "2026-09-20" },
+    { name: "Café Croissant",            section: "Food & Drink", status: "live",    owner: "Madeleine Croissant", updated: "2026-09-10" },
+    { name: "Le Petit Bistro Menu",      section: "Food & Drink", status: "blocked", owner: "Pierre Algorithme",   updated: "2026-09-05" },
+    { name: "Dietary Options",           section: "Food & Drink", status: "review",  owner: "Jean-Luc Backlog",    updated: "2026-09-27" },
+  ];
+
+  let activeStatus = "all";
+  let activeSection = "all";
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const initials = (name) => name.split(/[\s-]+/).map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  const fmtDate = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  function renderSummary() {
+    const counts = Object.fromEntries(Object.keys(STATUSES).map(k => [k, 0]));
+    pages.forEach(p => counts[p.status]++);
+    $("summary").innerHTML =
+      `<div class="tile"><div class="label">Total pages</div><div class="value">${pages.length}</div></div>` +
+      Object.entries(STATUSES).map(([k, s]) => `
+        <div class="tile ${s.cls}">
+          <div class="label"><span class="dot" style="background:var(--accent)"></span>${s.label}</div>
+          <div class="value">${counts[k]}</div>
+        </div>`).join("");
+
+    // Progress bar colors are fixed brights so they read on the purple header in both themes
+    const segColors = { live: "#5fd296", review: "#f2c14e", draft: "#d9d3e6", blocked: "#ff7b89" };
+    const order = ["live", "review", "draft", "blocked"];
+    const pct = Math.round(counts.live / pages.length * 100);
+    $("progress").innerHTML = `
+      <div class="progress-head">
+        <span>Launch progress &middot; ${counts.live} of ${pages.length} pages live</span>
+        <strong>${pct}%</strong>
+      </div>
+      <div class="progress-bar" role="progressbar" aria-label="Pages live"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+        ${order.filter(k => counts[k]).map(k =>
+          `<span style="flex-grow:${counts[k]};--seg:${segColors[k]}" title="${STATUSES[k].label}: ${counts[k]}"></span>`).join("")}
+      </div>
+      <div class="progress-legend">
+        ${order.map(k => `<span><span class="dot" style="background:${segColors[k]}"></span>${STATUSES[k].label} ${counts[k]}</span>`).join("")}
+      </div>`;
+  }
+
+  function renderFilters() {
+    const opts = [["all", "All"], ...Object.entries(STATUSES).map(([k, s]) => [k, s.label])];
+    $("chips").innerHTML = opts.map(([k, label]) =>
+      `<button class="chip" data-status="${k}" aria-pressed="${k === activeStatus}">${label}</button>`).join("");
+
+    const sections = [...new Set(pages.map(p => p.section))];
+    $("section-filter").insertAdjacentHTML("beforeend",
+      sections.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join(""));
+  }
+
+  function renderGrid() {
+    const visible = pages
+      .filter(p => (activeStatus === "all" || p.status === activeStatus) &&
+                   (activeSection === "all" || p.section === activeSection))
+      .sort((a, b) => b.updated.localeCompare(a.updated));
+
+    $("grid").innerHTML = visible.length ? visible.map(p => {
+      const s = STATUSES[p.status];
+      return `
+        <article class="card ${s.cls}">
+          <div class="card-top">
+            <div>
+              <div class="section">${esc(p.section)}</div>
+              <h2>${esc(p.name)}</h2>
+            </div>
+            <span class="badge"><span class="dot"></span>${s.label}</span>
+          </div>
+          <div class="meta">
+            <span class="owner"><span class="avatar" aria-hidden="true">${initials(p.owner)}</span>${esc(p.owner)}</span>
+            <span class="date">Updated<br>${fmtDate(p.updated)}</span>
+          </div>
+        </article>`;
+    }).join("") : `<p class="empty">No pages match these filters.</p>`;
+  }
+
+  $("chips").addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip");
+    if (!btn) return;
+    activeStatus = btn.dataset.status;
+    document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === btn));
+    renderGrid();
+  });
+  $("section-filter").addEventListener("change", (e) => { activeSection = e.target.value; renderGrid(); });
+
+  renderSummary();
+  renderFilters();
+  renderGrid();
+</script>
+</body>
+</html>
